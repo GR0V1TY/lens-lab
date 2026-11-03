@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171716">
+  <meta name="description" content="用实时动画理解焦距、景深与曝光。一个可以亲手调节的相机实验室。">
+  <title>镜头实验室 | 看见参数背后的画面</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23171716'/%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='%23efa86a' stroke-width='4'/%3E%3Cpath d='M32 12 48 40H16Z' fill='none' stroke='%23efa86a' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=7">
+</head>
+<body>
+  <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-aperture" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="m12 2 5.8 10M21 8H9.5M20 17l-5.8-10M12 22 6.2 12M3 16h11.5M4 7l5.8 10"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M8 5 9.5 3h5L16 5h4a2 2 0 0 1 2 2v12H2V7a2 2 0 0 1 2-2Z"/><circle cx="12" cy="12" r="4"/></symbol>
+    <symbol id="i-split" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M12 2v20M7 10l-2 2 2 2m10-4 2 2-2 2"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 15v5h16v-5"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18m6-18v18M3 9h18M3 15h18"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 4v16m8-16v16"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 3v.1"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24"><path d="M3 9V3h6m6 0h6v6m0 6v6h-6m-6 0H3v-6"/><circle cx="12" cy="12" r="3"/></symbol>
+  </defs></svg>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="镜头实验室首页"><svg class="brand-icon" aria-hidden="true"><use href="#i-aperture"/></svg><span>镜头实验室<small>Lens lab</small></span></a>
+      <nav class="mode-nav" aria-label="工作模式">
+        <button class="nav-button active" data-mode="lab" aria-pressed="true">模拟实验</button>
+        <button class="nav-button" data-mode="camera" aria-pressed="false">真实相机</button>
+      </nav>
+      <button class="icon-button help-button" id="help" aria-label="使用说明"><svg aria-hidden="true"><use href="#i-help"/></svg></button>
+    </header>
+    <main>
+      <section class="intro"><div><h1>让每一个参数，看得见。</h1><p>转动镜头，探索光与影的不同可能。</p></div><button class="text-button" id="reset"><svg aria-hidden="true"><use href="#i-reset"/></svg>重置参数</button></section>
+      <div class="workspace" id="lab-workspace">
+        <section class="view-column" aria-label="模拟取景与原理">
+          <div class="view-toolbar"><div class="scene-buttons" role="group" aria-label="模拟场景"><button class="scene-button active" data-scene="0" aria-pressed="true">日光静物</button><button class="scene-button" data-scene="1" aria-pressed="false">枝头小憩</button><button class="scene-button" data-scene="2" aria-pressed="false">蓝调时刻 · 高原</button></div><span class="simulation-note">实时光学模拟</span></div>
+          <div class="viewfinder" id="viewfinder">
+            <canvas id="scene" width="960" height="600" aria-label="三维相机模拟取景：层次丰富的日光庭院，或树枝上休息与振翅的鸟。点击画面或使用下方按钮对焦。"></canvas>
+            <canvas id="compare-scene" width="960" height="600" aria-label="保存的 A 组参数画面" hidden></canvas>
+            <div class="frame-top"><span class="frame-tag">全画幅 36 × 24 mm</span><span class="frame-tag" id="frame-focal">50 mm</span></div>
+            <div class="composition-grid" id="composition-grid" hidden aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <div class="focus-reticle" id="reticle" aria-hidden="true"><span></span></div>
+            <div class="frame-bottom"><span id="frame-mode">M</span><span id="frame-aperture">f/2.8</span><span id="frame-shutter">1/125 s</span><span id="frame-iso">ISO 100</span><span id="frame-ev">±0.0 EV</span></div>
+            <div class="compare-label label-a" hidden>A 组</div><div class="compare-label label-b" hidden>B 组 / 当前</div>
+            <div class="compare-divider" id="compare-divider" hidden><span>↔</span></div>
+            <input class="compare-range" id="compare-range" type="range" min="5" max="95" value="50" aria-label="移动 A/B 对比分界线" hidden>
+            <div class="render-message" id="render-message" hidden></div>
+          </div>
+          <div class="view-controls"><div class="view-actions"><button class="icon-button" id="grid-toggle" aria-label="显示构图网格" aria-pressed="false"><svg aria-hidden="true"><use href="#i-grid"/></svg></button><button class="icon-button" id="pause" aria-label="暂停动画" aria-pressed="false"><svg aria-hidden="true"><use href="#i-pause"/></svg></button><span class="focus-hint">点画面对焦</span></div><div class="view-actions"><button class="text-button" id="save-a"><svg aria-hidden="true"><use href="#i-split"/></svg>保存 A 组</button><button class="text-button" id="compare-toggle" disabled aria-pressed="false">开启对比</button><button class="icon-button" id="export" aria-label="保存模拟画面"><svg aria-hidden="true"><use href="#i-download"/></svg></button></div></div>
+          <section class="navigation-tools" aria-label="机位控制"><div class="focus-buttons"><button id="nav-orbit" aria-pressed="true">环绕观察</button><button id="nav-free" aria-pressed="false">自由漫游</button><button id="nav-reset">复位机位</button></div><div class="focus-buttons"><button data-view="front">正面</button><button data-view="side">侧面</button><button data-view="back">背面</button></div><label class="checkbox-label"><input type="checkbox" id="nav-track">持续对焦主体</label><p id="nav-hint">拖动旋转 · 右键拖动平移 · 滚轮移动；手机双指平移、捏合移动。轻点画面对焦。</p><div class="focus-buttons" id="nav-pad" hidden><button data-move="a" aria-label="向左移动">←</button><button data-move="w">前进</button><button data-move="s">后退</button><button data-move="d" aria-label="向右移动">→</button><button data-move="e">升高</button><button data-move="q">降低</button></div></section><details id="overview-panel" class="overview-panel"><summary>机位示意 <small>摄影师 · 拍摄方向 · 视野范围</small></summary><div class="overview-toolbar"><span><b class="marker-b">B 当前机位</b> <b class="marker-a">A 对比机位</b></span><div><button id="overview-wide" class="text-button">空间关系</button><button id="overview-near" class="text-button">人物近景</button></div></div><div class="overview-view"><canvas id="overview-canvas" aria-label="第三人称摄影师机位示意，左右拖动可旋转示意视角"></canvas><div id="overview-labels" aria-hidden="true"></div></div><p id="overview-status" role="status">展开后加载人物模型…</p><p class="overview-note">拖动此图只旋转示意视角。环境已简化；远距离时人物放大显示，镜头位置与视野角度保持准确。</p></details><div class="bird-tools" id="bird-tools" hidden><span id="bird-state">歇息中，留意偶尔展开的翅膀。</span><button class="text-button" id="flutter">观察振翅</button></div>
+          <div class="compare-info" id="compare-info" hidden></div>
+          <section class="optics-section"><div class="section-heading"><h2>光线如何成为画面</h2><span id="optics-label">光圈与景深</span></div><div class="optics-content"><canvas id="optics" width="840" height="165" aria-label="镜头光路原理动画，展示光圈开口、对焦平面与景深范围"></canvas><div class="optics-caption"><span>光圈开口 <b id="aperture-diameter">17.9 mm</b></span><span>对焦距离 <b id="focus-summary">5.6 m</b></span><span>景深范围 <b id="dof-summary">4.72 至 6.88 m</b></span></div></div><p class="optics-explanation" id="optics-explanation">大光圈让背景柔和地虚化，把视线留给主体。试试拖动光圈滑杆。</p></section>
+          <div class="learning-bar"><svg aria-hidden="true"><use href="#i-play"/></svg><span>从一个小实验开始</span><button data-lesson="depth">背景为什么虚化</button><button data-lesson="motion">凝固运动瞬间</button><button data-lesson="focal">广角与长焦</button><button id="lesson-stop" hidden>停止演示</button></div>
+          <p id="lesson-status" class="lesson-status" role="status" hidden></p>
+        </section>
+        <aside class="settings" aria-label="相机参数">
+          <div class="settings-head"><h2>相机设置</h2><span class="manual-tag">模拟</span></div>
+          <div class="exposure-modes"><span>曝光模式</span><div class="segmented" role="group" aria-label="曝光模式"><button data-exposure="M" class="active" aria-pressed="true">M</button><button data-exposure="A" aria-pressed="false">A</button><button data-exposure="S" aria-pressed="false">S</button><button data-exposure="P" aria-pressed="false">P</button></div></div>
+          <p class="mode-hint" id="mode-hint">手动曝光，自由控制光圈、快门与 ISO</p>
+          <div class="parameter" data-param="focal"><div class="parameter-heading"><label for="focal">焦距 <small>Focal length</small></label><output id="focal-value" for="focal">50 <small>mm</small></output></div><input id="focal" type="range" min="24" max="135" step="1" value="50"><div class="range-labels"><span>24 mm 广角</span><span id="focal-limit">135 mm 长焦</span></div><div class="focus-buttons tele-presets" id="tele-presets" role="group" aria-label="鸟类摄影焦距快捷档位" hidden><button data-focal-step="-1" aria-label="焦距减小一毫米">−1</button><button data-focal="100">100 mm</button><button data-focal="200">200 mm</button><button data-focal="300">300 mm</button><button data-focal="400">400 mm</button><button data-focal="600">600 mm</button><button data-focal-step="1" aria-label="焦距增大一毫米">+1</button></div><label class="checkbox-label"><input id="keep-size" type="checkbox">变焦时保持主体大小</label></div>
+          <div class="parameter" data-param="aperture"><div class="parameter-heading"><label for="aperture">光圈 <small>Aperture</small></label><output id="aperture-value" for="aperture">f/2.8</output></div><input id="aperture" type="range" min="0" max="8" step="1" value="2"><div class="range-labels"><span>f/1.4 浅景深</span><span>f/22 深景深</span></div></div>
+          <div class="parameter" data-param="shutter"><div class="parameter-heading"><label for="shutter">快门速度 <small>Shutter speed</small></label><output id="shutter-value" for="shutter">1/125 <small>s</small></output></div><input id="shutter" type="range" min="0" max="12" step="1" value="7"><div class="range-labels"><span>1 s 拖影</span><span>1/4000 s 定格</span></div></div>
+          <div class="parameter" data-param="iso"><div class="parameter-heading"><label for="iso">感光度 <small>ISO</small></label><output id="iso-value" for="iso">100</output></div><input id="iso" type="range" min="0" max="7" step="1" value="0"><div class="range-labels"><span>100 细腻</span><span>12800 噪点明显</span></div></div>
+          <div class="parameter" data-param="focus"><div class="parameter-heading"><label for="focus">对焦距离 <small>Focus distance</small></label><output id="focus-value" for="focus">5.6 <small>m</small></output></div><input id="focus" type="range" min="1" max="20" step="0.1" value="5.6"><div class="focus-buttons" role="group" aria-label="对焦位置"><button data-focus="near">前景</button><button data-focus="subject" class="active">主体</button><button data-focus="far">背景</button><button id="focus-infinity" hidden>∞ 无穷远</button></div></div>
+          <div class="parameter white-balance"><div class="parameter-heading"><label for="wb">白平衡 <small>White balance</small></label><output id="wb-value" for="wb">5500 <small>K</small></output></div><input id="wb" type="range" min="2500" max="8500" step="100" value="5500"><div class="range-labels"><span>冷调</span><span>暖调</span></div></div>
+          <div class="meter"><div><span>曝光指示</span><output id="ev-value">±0.0 EV</output></div><div class="meter-scale"><span>−3</span><span>−2</span><span>−1</span><span>0</span><span>+1</span><span>+2</span><span>+3</span><i id="meter-needle"></i></div><p id="exposure-hint">曝光平衡</p></div>
+        </aside>
+      </div>
+      <section class="camera-workspace" id="camera-workspace" hidden aria-label="真实摄像头">
+        <div class="camera-preview"><video id="camera-video" autoplay muted playsinline></video><div class="camera-grid composition-grid" hidden aria-hidden="true"><i></i><i></i><i></i><i></i></div><div id="camera-empty" class="camera-empty"><svg aria-hidden="true"><use href="#i-camera"/></svg><h2>把镜头，交给现实。</h2><p>开启设备摄像头，练习取景与构图。</p><button id="camera-start" class="primary-button">开启摄像头</button></div><span id="countdown-display" aria-live="assertive"></span></div>
+        <aside class="camera-settings"><h2>真实相机</h2><p>画面仅在本机处理，不上传照片。</p><label for="camera-device">摄像头</label><select id="camera-device" disabled><option>开启后选择设备</option></select><label for="countdown">拍照倒计时</label><select id="countdown"><option value="0">立即拍摄</option><option value="3">3 秒</option><option value="5">5 秒</option></select><label class="checkbox-label"><input type="checkbox" id="camera-grid-toggle">显示三分构图线</label><div id="camera-capabilities"></div><div class="camera-actions"><button id="capture" class="primary-button" disabled><svg aria-hidden="true"><use href="#i-camera"/></svg>拍照并保存</button><button id="camera-stop" class="text-button" disabled>关闭摄像头</button></div><p id="camera-status" class="camera-status" role="status">需要 HTTPS 或 localhost，以及摄像头访问权限。</p><p class="camera-limit">模拟实验中的光圈、快门、ISO 不会应用到真实摄像头。此处仅展示设备实际开放的控制项。</p></aside>
+      </section>
+    </main>
+    <footer><span>镜头实验室</span><span>模拟效果用于理解原理，实际成像因镜头与设备而异。</span><button class="text-button" id="about">关于模拟</button></footer>
+  </div>
+  <dialog id="help-dialog"><div class="dialog-head"><h2>把参数变成直觉</h2><button class="icon-button" id="close-help" aria-label="关闭说明">×</button></div><div class="help-content"><p>拖动右侧参数，观察取景画面和光路同时变化。手机上，参数面板位于画面下方。</p><ol><li><b>试试光圈：</b>将 f/2.8 调到 f/16，观察远处拱门逐渐清晰。</li><li><b>比较焦距：</b>先保存 A 组，再改变焦距，开启对比并拖动分界线。</li><li><b>理解透视：</b>固定机位改变焦距只改变取景范围；勾选“保持主体大小”会移动机位，背景与主体的大小比例随之改变。</li><li><b>观察运动：</b>切换“枝头小憩”，点击“观察振翅”并降低快门速度。使用 S 模式可自动匹配光圈与 ISO。</li></ol><p>景深采用全画幅、0.03 mm 弥散圆估算。虚化与噪点为教学近似；慢快门通过多时刻鸟姿态叠加展示运动模糊。鸟与栖木在 Blender 中建模，网页加载导出的网格与动作；远景树林为程序生成。曝光模式按场景亮度匹配参数，达到范围限制时可能无法完全补偿。</p><p>快门会改变运动拖影；动画本身仍连续播放，单次曝光的区别可以通过保存画面观察。摄像头拍照会保存预览帧，不保证与手机原生相机画质一致。</p></div></dialog>
+  <div id="notification" class="notification" role="status" hidden></div>
+  <noscript><p class="noscript">需要开启 JavaScript 才能使用实时模拟与摄像头功能。上方保留了操作说明。</p></noscript>
+  <script src="blender-assets.js?v=7"></script>
+  <script src="world.js?v=7"></script>
+  <script src="highland.js?v=7"></script>
+  <script src="renderer.js?v=7"></script>
+  <script src="navigation.js?v=7"></script>
+  <script src="overview.js?v=7"></script>
+  <script src="app.js?v=7"></script>
+</body>
+</html>
